@@ -75,7 +75,7 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).fillna(method='ffill').dropna()
+            })
         elif interval == "3H":
             df = df.resample('3H').agg({
                 'Open': 'first',
@@ -83,9 +83,9 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).fillna(method='ffill').dropna()
+            })
         elif interval == "1D":
-            df = df.asfreq('D').fillna(method='ffill')  # Ensure daily frequency and fill missing values
+            df = df.asfreq('D')
         elif interval == "1W":
             df = df.resample('W').agg({
                 'Open': 'first',
@@ -93,36 +93,25 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).fillna(method='ffill').dropna()
+            })
 
-        # Check if the dataframe is empty
-        if df.empty:
-            st.error(f"Data for {ticker} is empty.")
-            return df
+        # Interpolate missing values to ensure continuity
+        df = df.interpolate(method='linear').fillna(method='ffill').fillna(method='bfill')
 
         # Convert index to DatetimeIndex if it's not already
         if not isinstance(df.index, pd.DatetimeIndex):
             df.index = pd.to_datetime(df.index)
 
-        # Filter to exclude weekends and ensure data is within trading hours
-        df = df[df.index.dayofweek < 5]  # Exclude weekends
+        # Filter to exclude weekends if using intraday intervals
         if interval in ["1H", "3H"]:
             df = df.between_time('00:00', '23:59')  # Filter to include only trading hours
-
-        # Fill any remaining gaps in the data
-        df = df.resample('1H').agg({
-            'Open': 'first',
-            'High': 'max',
-            'Low': 'min',
-            'Close': 'last',
-            'Volume': 'sum'
-        }).fillna(method='ffill').dropna()
-
+        
         return df
 
     except Exception as e:
         st.error(f"Error downloading data for {ticker}: {e}")
         return pd.DataFrame()
+
 
 
 # Create a chart grid
