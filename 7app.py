@@ -148,6 +148,10 @@ def create_chart_grid(tickers, interval, num_candles):
                 ticker = tickers[index]
                 df = download_data(ticker, interval, num_candles)
                 
+                if df.empty:
+                    st.warning(f"No data available for {ticker}")
+                    continue
+
                 # Plot candlestick chart
                 fig = go.Figure(data=[go.Candlestick(x=df.index,
                                                      open=df['Open'],
@@ -165,6 +169,11 @@ def create_chart_grid(tickers, interval, num_candles):
                                                  name=f'EMA {params["window"]}', 
                                                  line=dict(color=color, width=2)))
 
+                # Determine tick values and text for x-axis
+                num_ticks = max(1, len(df.index) // 10)  # Ensure at least one tick
+                tick_vals = df.index[::num_ticks]
+                tick_text = [date.strftime('%d-%b-%y %H:%M') for date in df.index[::num_ticks]]
+
                 # Update chart layout with customized x-axis formatting
                 fig.update_layout(title=f'{ticker}({interval})',
                                   yaxis_title='Price',
@@ -174,13 +183,14 @@ def create_chart_grid(tickers, interval, num_candles):
                                   xaxis=dict(
                                       type='category',  # Ensures categorical treatment of x-axis
                                       tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
-                                      tickvals=df.index[::len(df.index)//10],  # Show fewer ticks
-                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::len(df.index)//10]],  # Custom tick labels
-                                      nticks=20  # Adjust number of ticks
+                                      tickvals=tick_vals,  # Show fewer ticks
+                                      ticktext=tick_text,  # Custom tick labels
+                                      nticks=min(len(tick_vals), 20)  # Adjust number of ticks
                                   ))
 
                 # Display the chart in the column
                 cols[col].plotly_chart(fig, use_container_width=True)
+
 
 # Display the charts grid
 create_chart_grid(tickers, interval, num_candles)
