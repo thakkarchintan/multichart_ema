@@ -64,8 +64,10 @@ chart_height = st.sidebar.number_input("Chart Height", min_value=100, max_value=
 # Function to download data based on date range and interval
 def download_data(ticker, interval, start_date, end_date):
     try:
+        # Download data from Yahoo Finance
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d')
 
+        # Resample data based on the selected interval
         if interval == "1H":
             df = df.resample('1H').agg({
                 'Open': 'first',
@@ -73,7 +75,7 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).dropna()
+            }).fillna(method='ffill').dropna()
         elif interval == "3H":
             df = df.resample('3H').agg({
                 'Open': 'first',
@@ -81,9 +83,9 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).dropna()
+            }).fillna(method='ffill').dropna()
         elif interval == "1D":
-            df = df.asfreq('D').fillna(method='ffill')  # Ensure daily frequency
+            df = df.asfreq('D').fillna(method='ffill')  # Ensure daily frequency and fill missing values
         elif interval == "1W":
             df = df.resample('W').agg({
                 'Open': 'first',
@@ -91,7 +93,7 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            }).dropna()
+            }).fillna(method='ffill').dropna()
 
         # Check if the dataframe is empty
         if df.empty:
@@ -106,12 +108,22 @@ def download_data(ticker, interval, start_date, end_date):
         df = df[df.index.dayofweek < 5]  # Exclude weekends
         if interval in ["1H", "3H"]:
             df = df.between_time('00:00', '23:59')  # Filter to include only trading hours
-        
+
+        # Fill any remaining gaps in the data
+        df = df.resample('1H').agg({
+            'Open': 'first',
+            'High': 'max',
+            'Low': 'min',
+            'Close': 'last',
+            'Volume': 'sum'
+        }).fillna(method='ffill').dropna()
+
         return df
 
     except Exception as e:
         st.error(f"Error downloading data for {ticker}: {e}")
         return pd.DataFrame()
+
 
 # Create a chart grid
 def create_chart_grid(tickers, interval, start_date, end_date):
