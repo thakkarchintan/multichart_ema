@@ -12,17 +12,21 @@ st.set_page_config(layout="wide")
 # Sidebar configuration
 st.sidebar.title('Multicharts with EMA')
 
+# Read the Excel file
+stock_data = pd.read_excel('Symbol_list.xlsx')
+tickers = stock_data['Ticker'].unique()
+
 # Load Excel file and get tickers from the same directory as the script
-current_directory = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(current_directory, 'Symbol_list.xlsx')
+# current_directory = os.path.dirname(os.path.abspath(__file__))
+# file_path = os.path.join(current_directory, 'Symbol_list.xlsx')
 
 # Read the Excel file
-if os.path.exists(file_path):
-    stock_data = pd.read_excel(file_path)
-    tickers = stock_data['Ticker'].unique()
-else:
-    st.sidebar.write("Symbol_list.xlsx not found in the current directory.")
-    st.stop()
+# if os.path.exists(file_path):
+    # stock_data = pd.read_excel(file_path)
+    # tickers = stock_data['Ticker'].unique()
+# else:
+    # st.sidebar.write("Symbol_list.xlsx not found in the current directory.")
+    # st.stop()
 
 # The rest of your code continues here
 
