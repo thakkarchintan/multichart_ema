@@ -115,9 +115,9 @@ def download_data(ticker, interval, num_candles):
             'Volume': 'sum'
         }).dropna()
     elif interval == "1D":
-        df = yf.download(ticker, period=f"{num_candles}d", interval='1d')
+        df = yf.download(ticker, period=f"{num_candles}", interval='1d')
     elif interval == "1W":
-        df = yf.download(ticker, period=f"{num_candles*7}d", interval='1d')
+        df = yf.download(ticker, period=f"{num_candles*7}", interval='1d')
         df = df.resample('W').agg({
             'Open': 'first',
             'High': 'max',
