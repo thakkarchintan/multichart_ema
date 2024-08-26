@@ -80,6 +80,11 @@ def download_data(ticker, interval, num_candles):
                 'Volume': 'sum'
             }).dropna()
 
+        # Check if the dataframe is empty
+        if df.empty:
+            st.error(f"Data for {ticker} is empty.")
+            return df
+
         # Convert index to DatetimeIndex if it's not already
         if not isinstance(df.index, pd.DatetimeIndex):
             df.index = pd.to_datetime(df.index)
@@ -90,9 +95,11 @@ def download_data(ticker, interval, num_candles):
             df = df.between_time('00:00', '23:59')  # Filter to include only trading hours
         
         return df
+
     except Exception as e:
         st.error(f"Error downloading data for {ticker}: {e}")
         return pd.DataFrame()
+
 
 # Create a chart grid
 def create_chart_grid(tickers, interval, num_candles):
