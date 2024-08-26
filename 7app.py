@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objs as go
 from ta.trend import EMAIndicator
-import os
+import numpy as np
 
 # Set the app to wide mode
 st.set_page_config(layout="wide")
@@ -64,10 +64,8 @@ chart_height = st.sidebar.number_input("Chart Height", min_value=100, max_value=
 # Function to download data based on date range and interval
 def download_data(ticker, interval, start_date, end_date):
     try:
-        # Download data from Yahoo Finance
         df = yf.download(ticker, start=start_date, end=end_date, interval='1d')
 
-        # Resample data based on the selected interval
         if interval == "1H":
             df = df.resample('1H').agg({
                 'Open': 'first',
@@ -75,7 +73,7 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            })
+            }).dropna()
         elif interval == "3H":
             df = df.resample('3H').agg({
                 'Open': 'first',
@@ -83,9 +81,9 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            })
+            }).dropna()
         elif interval == "1D":
-            df = df.asfreq('D')
+            df = df.asfreq('D').fillna(method='ffill')  # Ensure daily frequency
         elif interval == "1W":
             df = df.resample('W').agg({
                 'Open': 'first',
@@ -93,16 +91,19 @@ def download_data(ticker, interval, start_date, end_date):
                 'Low': 'min',
                 'Close': 'last',
                 'Volume': 'sum'
-            })
+            }).dropna()
 
-        # Interpolate missing values to ensure continuity
-        df = df.interpolate(method='linear').fillna(method='ffill').fillna(method='bfill')
+        # Check if the dataframe is empty
+        if df.empty:
+            st.error(f"Data for {ticker} is empty.")
+            return df
 
         # Convert index to DatetimeIndex if it's not already
         if not isinstance(df.index, pd.DatetimeIndex):
             df.index = pd.to_datetime(df.index)
 
-        # Filter to exclude weekends if using intraday intervals
+        # Filter to exclude weekends and ensure data is within trading hours
+        df = df[df.index.dayofweek < 5]  # Exclude weekends
         if interval in ["1H", "3H"]:
             df = df.between_time('00:00', '23:59')  # Filter to include only trading hours
         
@@ -111,8 +112,6 @@ def download_data(ticker, interval, start_date, end_date):
     except Exception as e:
         st.error(f"Error downloading data for {ticker}: {e}")
         return pd.DataFrame()
-
-
 
 # Create a chart grid
 def create_chart_grid(tickers, interval, start_date, end_date):
@@ -130,12 +129,16 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                     cols[col].write(f"Data for {ticker} could not be retrieved.")
                     continue
 
+                # Define fixed spacing for candles
+                candle_width = 0.8  # Adjust this value for the desired candle width
+
                 # Plot candlestick chart
                 fig = go.Figure(data=[go.Candlestick(x=df.index,
                                                      open=df['Open'],
                                                      high=df['High'],
                                                      low=df['Low'],
-                                                     close=df['Close'])])
+                                                     close=df['Close'],
+                                                     width=candle_width)])  # Set candle width
 
                 # Apply and plot EMA indicators with unique colors
                 for i, (indicator, params) in enumerate(indicator_params.items()):
@@ -157,7 +160,9 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                       tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
                                       tickvals=df.index[::max(1, len(df.index)//10)],  # Show fewer ticks, avoid zero step size
                                       ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::max(1, len(df.index)//10)]],  # Custom tick labels
-                                      nticks=20  # Adjust number of ticks
+                                      nticks=20,  # Adjust number of ticks
+                                      rangeslider=dict(visible=False),  # Hide the range slider
+                                      tickmode='array'  # Use fixed tick spacing
                                   ))
 
                 # Display the chart in the column
