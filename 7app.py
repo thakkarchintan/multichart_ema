@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objs as go
 from ta.trend import EMAIndicator
-import numpy as np
+import os
 
 # Set the app to wide mode
 st.set_page_config(layout="wide")
@@ -129,16 +129,12 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                     cols[col].write(f"Data for {ticker} could not be retrieved.")
                     continue
 
-                # Define fixed spacing for candles
-                candle_width = 0.8  # Adjust this value for the desired candle width
-
                 # Plot candlestick chart
                 fig = go.Figure(data=[go.Candlestick(x=df.index,
                                                      open=df['Open'],
                                                      high=df['High'],
                                                      low=df['Low'],
-                                                     close=df['Close'],
-                                                     width=candle_width)])  # Set candle width
+                                                     close=df['Close'])])
 
                 # Apply and plot EMA indicators with unique colors
                 for i, (indicator, params) in enumerate(indicator_params.items()):
@@ -160,10 +156,10 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                       tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
                                       tickvals=df.index[::max(1, len(df.index)//10)],  # Show fewer ticks, avoid zero step size
                                       ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::max(1, len(df.index)//10)]],  # Custom tick labels
-                                      nticks=20,  # Adjust number of ticks
-                                      rangeslider=dict(visible=False),  # Hide the range slider
-                                      tickmode='array'  # Use fixed tick spacing
-                                  ))
+                                      nticks=20  # Adjust number of ticks
+                                  ),
+                                  bargap=0.2  # Adjust gap between bars
+                                  )
 
                 # Display the chart in the column
                 cols[col].plotly_chart(fig, use_container_width=True)
