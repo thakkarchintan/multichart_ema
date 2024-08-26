@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objs as go
 from ta.trend import EMAIndicator
-import os
+import numpy as np
 
 # Set the app to wide mode
 st.set_page_config(layout="wide")
@@ -146,7 +146,11 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                                  name=f'EMA {params["window"]}', 
                                                  line=dict(color=color, width=2)))
 
-                # Update chart layout with categorical x-axis
+                # Update chart layout with dynamic x-axis labels and date-time format
+                tick_interval = max(1, len(df.index) // 20)  # Show approximately 20 ticks
+                tick_values = df.index[::tick_interval]
+                tick_labels = [date.strftime('%d-%b-%y %H:%M') for date in tick_values]
+
                 fig.update_layout(title=f'{ticker} ({interval})',
                                   yaxis_title='Price',
                                   xaxis_title='Date',
@@ -154,8 +158,9 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                   height=chart_height,
                                   xaxis=dict(
                                       type='category',  # Set x-axis type to categorical
-                                      tickvals=df.index,
-                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::len(df.index)//10]], #Custom tick labels
+                                      tickvals=tick_values,
+                                      ticktext=tick_labels,
+                                      tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
                                       nticks=20  # Adjust number of ticks
                                   ))
 
