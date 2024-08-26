@@ -68,16 +68,45 @@ num_columns = st.sidebar.number_input("Number of Columns", min_value=1, max_valu
 # Height of the chart
 chart_height = st.sidebar.number_input("Chart Height", min_value=100, max_value=1200, value=800)
 
-# Function to download data based on interval
+# Function to download data based on interval (OLD)
+# def download_data(ticker, interval, num_candles):
+    # if interval == "1H":
+        # df = yf.download(ticker, period=f"{num_candles}h", interval='1h')
+        # df = df[df.index.dayofweek < 5]  # Exclude weekends
+        # df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
+    # elif interval == "3H":
+        # df = yf.download(ticker, period=f"{num_candles*3}h", interval='1h')
+        # df = df[df.index.dayofweek < 5]  # Exclude weekends
+        # df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
+        # df = df.resample('3H').agg({
+            # 'Open': 'first',
+            # 'High': 'max',
+            # 'Low': 'min',
+            # 'Close': 'last',
+            # 'Volume': 'sum'
+        # }).dropna()
+    # elif interval == "1D":
+        # df = yf.download(ticker, period=f"{num_candles}d", interval='1d')
+        # df = df[df.index.dayofweek < 5]  # Exclude weekends
+    # elif interval == "1W":
+        # df = yf.download(ticker, period=f"{num_candles*7}d", interval='1d')
+        # df = df[df.index.dayofweek < 5]  # Exclude weekends
+        # df = df.resample('W').agg({
+            # 'Open': 'first',
+            # 'High': 'max',
+            # 'Low': 'min',
+            # 'Close': 'last',
+            # 'Volume': 'sum'
+        # }).dropna()
+    # return df
+
+# NEW 
+
 def download_data(ticker, interval, num_candles):
     if interval == "1H":
         df = yf.download(ticker, period=f"{num_candles}h", interval='1h')
-        df = df[df.index.dayofweek < 5]  # Exclude weekends
-        df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
     elif interval == "3H":
         df = yf.download(ticker, period=f"{num_candles*3}h", interval='1h')
-        df = df[df.index.dayofweek < 5]  # Exclude weekends
-        df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
         df = df.resample('3H').agg({
             'Open': 'first',
             'High': 'max',
@@ -87,10 +116,8 @@ def download_data(ticker, interval, num_candles):
         }).dropna()
     elif interval == "1D":
         df = yf.download(ticker, period=f"{num_candles}d", interval='1d')
-        df = df[df.index.dayofweek < 5]  # Exclude weekends
     elif interval == "1W":
         df = yf.download(ticker, period=f"{num_candles*7}d", interval='1d')
-        df = df[df.index.dayofweek < 5]  # Exclude weekends
         df = df.resample('W').agg({
             'Open': 'first',
             'High': 'max',
@@ -98,7 +125,16 @@ def download_data(ticker, interval, num_candles):
             'Close': 'last',
             'Volume': 'sum'
         }).dropna()
+    
+    # Ensure the index is a DatetimeIndex before filtering by dayofweek
+    df.index = pd.to_datetime(df.index)
+    df = df[df.index.dayofweek < 5]  # Exclude weekends
+    
+    if interval in ["1H", "3H"]:
+        df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
+    
     return df
+
 
 # Create a chart grid
 def create_chart_grid(tickers, interval, num_candles):
