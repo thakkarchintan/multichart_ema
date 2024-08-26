@@ -59,12 +59,8 @@ def download_data(ticker, interval, num_candles):
     try:
         if interval == "1H":
             df = yf.download(ticker, period=f"{num_candles}h", interval='1h')
-            df = df[df.index.dayofweek < 5]  # Exclude weekends
-            df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
         elif interval == "3H":
             df = yf.download(ticker, period=f"{num_candles*3}h", interval='1h')
-            df = df[df.index.dayofweek < 5]  # Exclude weekends
-            df = df.between_time('00:00', '23:59')  # Filter to only include trading hours
             df = df.resample('3H').agg({
                 'Open': 'first',
                 'High': 'max',
@@ -74,10 +70,8 @@ def download_data(ticker, interval, num_candles):
             }).dropna()
         elif interval == "1D":
             df = yf.download(ticker, period=f"{num_candles}d", interval='1d')
-            df = df[df.index.dayofweek < 5]  # Exclude weekends
         elif interval == "1W":
             df = yf.download(ticker, period=f"{num_candles*7}d", interval='1d')
-            df = df[df.index.dayofweek < 5]  # Exclude weekends
             df = df.resample('W').agg({
                 'Open': 'first',
                 'High': 'max',
@@ -85,6 +79,16 @@ def download_data(ticker, interval, num_candles):
                 'Close': 'last',
                 'Volume': 'sum'
             }).dropna()
+
+        # Convert index to DatetimeIndex if it's not already
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index)
+
+        # Filter to exclude weekends and ensure data is within trading hours
+        df = df[df.index.dayofweek < 5]  # Exclude weekends
+        if interval in ["1H", "3H"]:
+            df = df.between_time('00:00', '23:59')  # Filter to include only trading hours
+        
         return df
     except Exception as e:
         st.error(f"Error downloading data for {ticker}: {e}")
