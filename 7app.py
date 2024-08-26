@@ -28,8 +28,14 @@ else:
 # Interval selection
 interval = st.sidebar.selectbox("Select Interval", options=["1H", "3H", "1D", "1W"], index=2)
 
-# Number of candles option
-num_candles = st.sidebar.number_input("Number of Candles", min_value=1, max_value=10000, value=100)
+# Date selection
+start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2023-01-01"))
+end_date = st.sidebar.date_input("End Date", pd.to_datetime("today"))
+
+# Ensure end_date is after start_date
+if end_date < start_date:
+    st.sidebar.error("End Date must be after Start Date.")
+    st.stop()
 
 # EMA indicators
 selected_indicators = []
@@ -54,13 +60,20 @@ num_columns = st.sidebar.number_input("Number of Columns", min_value=1, max_valu
 # Height of the chart
 chart_height = st.sidebar.number_input("Chart Height", min_value=100, max_value=1200, value=800)
 
-# Function to download data based on interval
-def download_data(ticker, interval, num_candles):
+# Function to download data based on date range and interval
+def download_data(ticker, interval, start_date, end_date):
     try:
+        df = yf.download(ticker, start=start_date, end=end_date, interval='1d')
+
         if interval == "1H":
-            df = yf.download(ticker, period=f"{num_candles}h", interval='1h')
+            df = df.resample('1H').agg({
+                'Open': 'first',
+                'High': 'max',
+                'Low': 'min',
+                'Close': 'last',
+                'Volume': 'sum'
+            }).dropna()
         elif interval == "3H":
-            df = yf.download(ticker, period=f"{num_candles*3}h", interval='1h')
             df = df.resample('3H').agg({
                 'Open': 'first',
                 'High': 'max',
@@ -69,9 +82,8 @@ def download_data(ticker, interval, num_candles):
                 'Volume': 'sum'
             }).dropna()
         elif interval == "1D":
-            df = yf.download(ticker, period=f"{num_candles}d", interval='1d')
+            df = df.asfreq('D').fillna(method='ffill')  # Ensure daily frequency
         elif interval == "1W":
-            df = yf.download(ticker, period=f"{num_candles*7}d", interval='1d')
             df = df.resample('W').agg({
                 'Open': 'first',
                 'High': 'max',
@@ -100,9 +112,8 @@ def download_data(ticker, interval, num_candles):
         st.error(f"Error downloading data for {ticker}: {e}")
         return pd.DataFrame()
 
-
 # Create a chart grid
-def create_chart_grid(tickers, interval, num_candles):
+def create_chart_grid(tickers, interval, start_date, end_date):
     num_rows = -(-len(tickers) // num_columns)  # Ceiling division
 
     for row in range(num_rows):
@@ -111,7 +122,7 @@ def create_chart_grid(tickers, interval, num_candles):
             index = row * num_columns + col
             if index < len(tickers):
                 ticker = tickers[index]
-                df = download_data(ticker, interval, num_candles)
+                df = download_data(ticker, interval, start_date, end_date)
                 
                 if df.empty:
                     cols[col].write(f"Data for {ticker} could not be retrieved.")
@@ -151,4 +162,4 @@ def create_chart_grid(tickers, interval, num_candles):
                 cols[col].plotly_chart(fig, use_container_width=True)
 
 # Display the charts grid
-create_chart_grid(tickers, interval, num_candles)
+create_chart_grid(tickers, interval, start_date, end_date)
