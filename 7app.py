@@ -155,7 +155,7 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                   xaxis=dict(
                                       type='category',  # Set x-axis type to categorical
                                       tickvals=df.index,
-                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index],
+                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::len(df.index)//10]], #Custom tick labels
                                       nticks=20  # Adjust number of ticks
                                   ))
 
