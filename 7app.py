@@ -40,7 +40,7 @@ tickers = stock_data['Ticker'].unique()
     # st.stop()
 
 # Interval selection
-# interval = st.sidebar.selectbox("Select Interval", options=["1H", "3H", "1D", "1W"], index=2)
+interval = st.sidebar.selectbox("Select Interval", options=["1H", "3H", "1D", "1W"], index=2)
 
 # Number of candles option
 num_candles = st.sidebar.selectbox("Select Interval", options=["1D", "5D", "1mo", "3mo"], index=2)
