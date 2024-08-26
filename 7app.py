@@ -146,20 +146,18 @@ def create_chart_grid(tickers, interval, start_date, end_date):
                                                  name=f'EMA {params["window"]}', 
                                                  line=dict(color=color, width=2)))
 
-                # Update chart layout with customized x-axis formatting
+                # Update chart layout with categorical x-axis
                 fig.update_layout(title=f'{ticker} ({interval})',
                                   yaxis_title='Price',
                                   xaxis_title='Date',
                                   xaxis_rangeslider_visible=False,
                                   height=chart_height,
                                   xaxis=dict(
-                                      tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
-                                      tickvals=df.index[::max(1, len(df.index)//10)],  # Show fewer ticks, avoid zero step size
-                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index[::max(1, len(df.index)//10)]],  # Custom tick labels
+                                      type='category',  # Set x-axis type to categorical
+                                      tickvals=df.index,
+                                      ticktext=[date.strftime('%d-%b-%y %H:%M') for date in df.index],
                                       nticks=20  # Adjust number of ticks
-                                  ),
-                                  bargap=0.2  # Adjust gap between bars
-                                  )
+                                  ))
 
                 # Display the chart in the column
                 cols[col].plotly_chart(fig, use_container_width=True)
