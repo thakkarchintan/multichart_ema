@@ -152,6 +152,9 @@ def create_chart_grid(tickers, interval, num_candles):
                     st.warning(f"No data available for {ticker}")
                     continue
 
+                # Ensure the index is a DatetimeIndex
+                df.index = pd.to_datetime(df.index)
+                
                 # Plot candlestick chart
                 fig = go.Figure(data=[go.Candlestick(x=df.index,
                                                      open=df['Open'],
@@ -181,7 +184,7 @@ def create_chart_grid(tickers, interval, num_candles):
                                   xaxis_rangeslider_visible=False,
                                   height=chart_height,
                                   xaxis=dict(
-                                      type='category',  # Ensures categorical treatment of x-axis
+                                      type='date',  # Use 'date' for DatetimeIndex
                                       tickformat='%d-%b-%y %H:%M',  # Customize x-axis date-time format
                                       tickvals=tick_vals,  # Show fewer ticks
                                       ticktext=tick_text,  # Custom tick labels
@@ -190,6 +193,7 @@ def create_chart_grid(tickers, interval, num_candles):
 
                 # Display the chart in the column
                 cols[col].plotly_chart(fig, use_container_width=True)
+
 
 
 # Display the charts grid
