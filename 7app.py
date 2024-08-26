@@ -47,7 +47,8 @@ if add_ema:
     num_instances = st.sidebar.number_input("How many EMAs?", min_value=1, max_value=5, value=1)
     for i in range(num_instances):
         with st.sidebar.expander(f"EMA Instance {i+1}"):
-            window = st.sidebar.number_input(f"EMA Window", min_value=2, max_value=1000, value=14)
+            window_key = f"ema_window_{i}"
+            window = st.sidebar.number_input(f"EMA Window {i+1}", min_value=2, max_value=1000, value=14, key=window_key)
             selected_indicators.append("EMA")
             indicator_params[f"EMA_{i}"] = {"window": window}
 
